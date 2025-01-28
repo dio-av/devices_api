@@ -3,6 +3,7 @@ package server
 import (
 	"devices_api/internal/devices"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,22 +21,25 @@ func (s *Server) RegisterRoutes() http.Handler {
 		httpSwagger.URL("http://localhost:1323/swagger/doc.json"),
 	))
 
-	// api router
+	// REST api routes begin
+	// TODO: REST api router should be moved to the rest package
 	apiRouter := chi.NewRouter()
 	r.Mount("/api/v1", apiRouter)
 
-	apiRouter.Post("/devices/new", s.NewDevice)
+	apiRouter.Post("/devices/new", s.CreateDevice)
 
-	apiRouter.Put("/devices/update", s.UpdateDevice)
+	apiRouter.Put("/devices/update/{id}", s.UpdateDevice)
 
-	apiRouter.Get("/devices/{id}", s.DeviceById)
+	apiRouter.Get("/devices/single/{id}", s.DeviceById)
 
 	apiRouter.Get("/devices/brand/{brand}", s.DevicesByBrand)
 
+	apiRouter.Get("devices/state/{state}", s.DevicesByState)
+
 	apiRouter.Get("/devices/all", s.AllDevices)
 
-	apiRouter.Get("devices/state/{state}", s.DevicesByState)
-	// end of api router
+	apiRouter.Delete("devices/delete/", s.DeleteDevice)
+	// end of REST api routes
 
 	r.Get("/", s.HelloWorldHandler)
 
@@ -56,20 +60,16 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
-// NewDevice godoc
+// CreateDevice swagger:route POST /devices device devices.CreateDevice
 //
-//	@Summary		Add a device
-//	@Description	add by json create device
-//	@Tags			devices
-//	@Accept			json
-//	@Produce		json
-//	@Param			create_device	body		model.CreateDevice	true	"Add device"
-//	@Success		200		{object}	model.Device
-//	@Failure		400		{object}	httputil.HTTPError
-//	@Failure		404		{object}	httputil.HTTPError
-//	@Failure		500		{object}	httputil.HTTPError
-//	@Router			/devices/new [post]
-func (s *Server) NewDevice(w http.ResponseWriter, r *http.Request) {
+// Creates a new device.
+//
+// Responses:
+//
+//		default: genericError
+//		200: device
+//	 	500: internalServerError
+func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request) {
 	var device devices.CreateDevice
 
 	json.NewDecoder(r.Body).Decode(&device)
@@ -84,6 +84,19 @@ func (s *Server) NewDevice(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(d)
 }
 
+// DeviceById godoc
+//
+//	@Summary		Get a device by it's ID
+//	@Description
+//	@Tags			devices
+//	@Accept			json
+//	@Produce		json
+//	@Param          id   path      integer  true  "Device ID"
+//	@Success		200		{object}	devices.Device
+//	@Failure		400		{object}	httputil.HTTPError
+//	@Failure		404		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/devices/{id} [get]
 func (s *Server) DeviceById(w http.ResponseWriter, r *http.Request) {
 	idUrl := chi.URLParam(r, "id")
 
@@ -104,6 +117,19 @@ func (s *Server) DeviceById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(d)
 }
 
+// AllDevices godoc
+//
+//	@Summary		Get all devices
+//	@Description
+//	@Tags			devices
+//	@Accept			json
+//	@Produce		json
+//	@Param			-
+//	@Success		200		{object}	devices.Device
+//	@Failure		400		{object}	httputil.HTTPError
+//	@Failure		404		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/devices/all [get]
 func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 	dd, err := s.db.All(r.Context())
 	if err != nil {
@@ -114,6 +140,19 @@ func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dd)
 }
 
+// DevicesByBrand godoc
+//
+//	@Summary		Get devices by brand
+//	@Description
+//	@Tags			devices
+//	@Accept			json
+//	@Produce		json
+//	@Param          brand   path  string  true  "Device Brand"
+//	@Success		200		{object}	devices.Device
+//	@Failure		400		{object}	httputil.HTTPError
+//	@Failure		404		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/devices/{brand} [get]
 func (s *Server) DevicesByBrand(w http.ResponseWriter, r *http.Request) {
 	brand := chi.URLParam(r, "brand")
 
@@ -126,6 +165,15 @@ func (s *Server) DevicesByBrand(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dd)
 }
 
+// UpdateDevcie swagger:route PUT /devices/{id} devices updateDevice
+//
+// Updates the parameters for a device.
+//
+// Responses:
+//
+//	default: genericError
+//	    200: device
+//	    500: internalServerError
 func (s *Server) UpdateDevice(w http.ResponseWriter, r *http.Request) {
 	var device devices.Device
 	json.NewDecoder(r.Body).Decode(&device)
@@ -145,6 +193,19 @@ func (s *Server) UpdateDevice(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(du)
 }
 
+// DevicesByBrand godoc
+//
+//	@Summary		Get devices by brand
+//	@Description
+//	@Tags			devices
+//	@Accept			json
+//	@Produce		json
+//	@Param          state   path  integer  true  "Device Brand"
+//	@Success		200		{object}	devices.Device
+//	@Failure		400		{object}	httputil.HTTPError
+//	@Failure		404		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/devices/state/{state} [get]
 func (s *Server) DevicesByState(w http.ResponseWriter, r *http.Request) {
 	state := chi.URLParam(r, "state")
 
@@ -164,12 +225,24 @@ func (s *Server) DevicesByState(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dd)
 }
 
+// DeleteDevice swagger:route DELETE /devices/{id} device deleteDevice
+//
+// Deletes a device.
+//
+// Responses:
+//
+//		default: rowsAffected
+//		    202:
+//	     500:
 func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	var device devices.Device
 	json.NewDecoder(r.Body).Decode(&device)
 
 	result, err := s.db.Delete(r.Context(), device)
 	if err != nil {
+		if errors.Is(err, devices.ErrDeviceInUse) {
+			http.Error(w, err.Error(), http.StatusAccepted)
+		}
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -1,9 +1,15 @@
+// Package Devices provides the implementation for models and behaviour for
+// the device toghether with the definitions of the interfaces to interact
+// with a database.
 package devices
 
 import (
 	"time"
 )
 
+// swagger:model
+
+// Device represents the model for the device.
 type Device struct {
 	Id        int64       `json:"id"`
 	Name      string      `json:"name"`

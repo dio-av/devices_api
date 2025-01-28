@@ -36,12 +36,17 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
-// @title Swagger Devices API
-// @version 1.0
-// @description This is an API for Devices.
+//	@title			Swagger Example API
+//	@version		1.0
+//	@description	This is a sample server celler server.
+//	@host		localhost
+//	@BasePath	/api/v1
+//	@securityDefinitions.basic	BasicAuth
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						Authorization
+//	@description				API key security definition being used
 
-// @host localhost.swagger:8080
-// @BasePath /v1
 func main() {
 
 	server := server.NewServer()

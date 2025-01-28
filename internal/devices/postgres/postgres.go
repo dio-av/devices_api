@@ -203,6 +203,7 @@ func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, err
 const deleteDevice = `delete FROM devices where id = $1`
 
 func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, error) {
+	// TODO: Check via database if the device is in use
 	if d.DeviceInUse() {
 		return nil, errors.New("cannot delete device while in use state")
 	}

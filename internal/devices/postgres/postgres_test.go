@@ -34,7 +34,7 @@ type DevicesRepoTestSuite struct {
 
 func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 	pgContainer, err := postgres.Run(ctx,
-		"postgres:15.3-alpine",
+		"postgres:16-alpine",
 		postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
 		postgres.WithDatabase("test-db"),
 		postgres.WithUsername("postgres"),
@@ -43,6 +43,7 @@ func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
 	)
+
 	if err != nil {
 		return nil, err
 	}

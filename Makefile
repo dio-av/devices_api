@@ -9,6 +9,9 @@ build:
 	
 	@go build -o main cmd/api/main.go
 
+swagger:
+	swagger generate spec -o ./swagger.json
+
 # Run the application
 run:
 	@go run cmd/api/main.go
@@ -37,7 +40,7 @@ test:
 # Integrations Tests for the application
 itest:
 	@echo "Running integration tests..."
-	@go test ./internal/database -v
+	@go test ./internal/devices/posgres -v
 
 # Clean the binary
 clean:
