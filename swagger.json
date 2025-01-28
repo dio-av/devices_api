@@ -1,0 +1,57 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1"
+  },
+  "host": "localhost",
+  "basePath": "/v1",
+  "paths": {
+    "/devices/{id}": {
+      "put": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Updates the parameters for a device.",
+        "operationId": "updateDevice",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/device"
+          },
+          "500": {
+            "$ref": "#/responses/internalServerError"
+          },
+          "default": {
+            "$ref": "#/responses/genericError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "device"
+        ],
+        "summary": "Deletes a device.",
+        "operationId": "deleteDevice",
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "500": {
+            "description": ""
+          },
+          "default": {
+            "$ref": "#/responses/rowsAffected"
+          }
+        }
+      }
+    }
+  }
+}
