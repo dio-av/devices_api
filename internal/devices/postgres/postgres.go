@@ -48,12 +48,13 @@ func NewRepository() devices.Repository {
 
 const createDevice = `-- name: CreateDevice :one
 INSERT INTO devices (
-  name,
-  brand,
-  state
+  d_name,
+  d_brand,
+  d_state,
+  created_at
 ) VALUES (
-  $1, $2, $3
-) RETURNING name, brand, state, email, created_at
+  $1, $2, $3, NOW()
+) RETURNING d_name, d_brand, d_state, created_at
 `
 
 func (s *service) Create(ctx context.Context, cd devices.CreateDevice) (*devices.Device, error) {
@@ -74,7 +75,7 @@ func (s *service) Create(ctx context.Context, cd devices.CreateDevice) (*devices
 	return &d, nil
 }
 
-const getDeviceById = `SELECT id, name, brand, state, created_at FROM devices
+const getDeviceById = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
 WHERE id = $1 LIMIT 1`
 
 func (s *service) GetById(ctx context.Context, id int64) (*devices.Device, error) {
@@ -96,8 +97,8 @@ func (s *service) GetById(ctx context.Context, id int64) (*devices.Device, error
 	return &d, nil
 }
 
-const getDevicesByBrand = `SELECT id, name, brand, state, created_at FROM devices
-WHERE brand = $1`
+const getDevicesByBrand = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
+WHERE d_brand = $1`
 
 func (s *service) GetByBrand(ctx context.Context, brand string) ([]devices.Device, error) {
 	var dd []devices.Device
@@ -126,8 +127,8 @@ func (s *service) GetByBrand(ctx context.Context, brand string) ([]devices.Devic
 	return dd, nil
 }
 
-const getDevicesByState = `SELECT id, name, brand, state, created_at FROM devices
-WHERE state = $1`
+const getDevicesByState = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
+WHERE d_state = $1`
 
 func (s *service) GetByState(ctx context.Context, state devices.DeviceState) ([]devices.Device, error) {
 	var dd []devices.Device
@@ -185,7 +186,7 @@ func (s *service) All(ctx context.Context) ([]devices.Device, error) {
 	return dd, nil
 }
 
-const updateDevice = `UPDATE devices SET name, brand, state = $1, $2, $3 WHERE id = $4;`
+const updateDevice = `UPDATE devices SET d_name = $1, d_brand = $2, d_state = $3 WHERE id = $4;`
 
 func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, error) {
 	if d.DeviceInUse() {
@@ -200,7 +201,7 @@ func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, err
 	return result, nil
 }
 
-const deleteDevice = `delete FROM devices where id = $1`
+const deleteDevice = `DELETE FROM devices where id = $1`
 
 func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, error) {
 	// TODO: Check via database if the device is in use
@@ -210,7 +211,7 @@ func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, err
 
 	result, err := s.db.Exec(deleteDevice, d.Id)
 	if err != nil {
-		return nil, err
+		return nil, devices.ErrDeleteFailed
 	}
 
 	return result, nil
