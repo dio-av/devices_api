@@ -35,7 +35,7 @@ type DevicesRepoTestSuite struct {
 func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 	pgContainer, err := postgres.Run(ctx,
 		"postgres:16-alpine",
-		postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
+		postgres.WithInitScripts(filepath.Join("../../migrations", "testdata", "schema.gen.sql")),
 		postgres.WithDatabase("test-db"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("postgres"),
@@ -146,14 +146,21 @@ func TestClose(t *testing.T) {
 	}
 }
 
-func (suite *DevicesRepoTestSuite) TestCreateCustomer() {
+func (suite *DevicesRepoTestSuite) TestCreateDevice() {
 	t := suite.T()
 
-	customer, err := suite.repo.Create(suite.ctx, devices.CreateDevice{
+	device, err := suite.repo.Create(suite.ctx, devices.CreateDevice{
 		Name:  "Device1",
 		Brand: "Brand1",
 		State: devices.Inactive,
 	})
 	assert.NoError(t, err)
-	assert.NotNil(t, customer.Id)
+	assert.NotNil(t, device.Id)
+}
+
+func TestCreate(t *testing.T) {
+	drts := DevicesRepoTestSuite{
+		repo: NewRepository(),
+	}
+	drts.TestCreateDevice()
 }
