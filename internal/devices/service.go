@@ -29,6 +29,6 @@ func (d *Device) CreationTimeFormatted() string {
 	return d.CreatedAt.Format(dateTimeApiLayout)
 }
 
-func (d *Device) DeviceInUse() bool {
+func (d *Device) IsDeviceInUse() bool {
 	return d.State == InUse
 }
