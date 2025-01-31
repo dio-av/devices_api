@@ -186,10 +186,13 @@ func (s *service) All(ctx context.Context) ([]devices.Device, error) {
 	return dd, nil
 }
 
-const updateDevice = `UPDATE devices SET d_name = $1, d_brand = $2, d_state = $3 WHERE id = $4;`
+const updateDevice = `UPDATE devices SET
+	d_name = $1, d_brand = $2, d_state = $3
+	WHERE
+	id = $4;`
 
 func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, error) {
-	if d.DeviceInUse() {
+	if d.IsDeviceInUse() {
 		return nil, errors.New("cannot update device while in use state")
 	}
 
@@ -205,7 +208,7 @@ const deleteDevice = `DELETE FROM devices where id = $1`
 
 func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, error) {
 	// TODO: Check via database if the device is in use
-	if d.DeviceInUse() {
+	if d.IsDeviceInUse() {
 		return nil, errors.New("cannot delete device while in use state")
 	}
 
