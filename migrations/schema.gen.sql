@@ -4,7 +4,7 @@ CREATE TABLE migrations (
 	revision           TEXT NOT NULL,
 	revision_timestamp TIMESTAMP NOT NULL
 );
-CREATE TABLE devices(
+CREATE TABLE IF NOT EXISTS devices(
     id                SERIAL PRIMARY KEY,
     d_name            TEXT NOT NULL,
     d_brand           TEXT NOT NULL,
