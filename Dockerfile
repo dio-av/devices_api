@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.23 AS build
+FROM golang:1.23-alpine3.20 AS build
 WORKDIR /cmd
 
 # Copy the source code
