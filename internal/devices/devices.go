@@ -15,7 +15,7 @@ type Device struct {
 	Name      string      `json:"name"`
 	Brand     string      `json:"brand"`
 	State     DeviceState `json:"state"`
-	CreatedAt *time.Time  `json:"created_at"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
 type DeviceState int
@@ -28,9 +28,8 @@ const (
 
 const dateTimeApiLayout = time.RFC3339
 
-func NewDevice(id int64, name string, brand string) *Device {
+func NewDevice(name string, brand string) *Device {
 	return &Device{
-		Id:    id,
 		Name:  name,
 		Brand: brand,
 		State: Inactive,
