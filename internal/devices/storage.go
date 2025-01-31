@@ -14,7 +14,7 @@ var (
 	ErrDeviceInUse  = errors.New("cannot delete device while in use state")
 )
 
-// CreateDevice represents the model for the REST API to create a new device.
+// CreateDevice represents the model to create a new device.
 type CreateDevice struct {
 	Name  string      `json:"name"`
 	Brand string      `json:"brand"`
