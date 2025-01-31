@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	repo "devices_api/internal/devices/postgres"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,12 +38,16 @@ func TestHandler(t *testing.T) {
 }
 
 func TestCreateDevice(t *testing.T) {
-	s := &Server{
-		port: 8080,
-		db:   repo.NewRepository(),
-	}
+	s := &Server{}
 	server := httptest.NewServer(http.HandlerFunc(s.CreateDevice))
 	defer server.Close()
+
+	var respBody *bytes.Reader
+	resp, err := http.Post(server.URL+"/devices/new", "text/json", respBody)
+	if err != nil {
+		t.Fatalf("error making request to server. Err: %v", err)
+	}
+	defer resp.Body.Close()
 
 	type device struct {
 		Name  string `json:"name"`
@@ -59,13 +61,13 @@ func TestCreateDevice(t *testing.T) {
 		t.Errorf("POST /devices/new: %s", err)
 	}
 
-	respBody := bytes.NewReader(dJson)
+	respBody = bytes.NewReader(dJson)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/devices/new", respBody)
 
 	s.CreateDevice(w, r)
 
-	resp := w.Result()
+	resp = w.Result()
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
