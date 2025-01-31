@@ -10,6 +10,7 @@ require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
+	go.uber.org/mock v0.5.0
 )
 
 require (
