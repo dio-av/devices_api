@@ -60,8 +60,8 @@ func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 
 func mustStartPostgresContainer() (func(context.Context, ...testcontainers.TerminateOption) error, error) {
 	var (
-		dbName = "database"
-		dbPwd  = "password"
+		dbName = "postgresql"
+		dbPwd  = "postgresql"
 		dbUser = "user"
 	)
 

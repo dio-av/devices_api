@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -26,7 +27,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	apiRouter := chi.NewRouter()
 	r.Mount("/api/v1", apiRouter)
 
-	apiRouter.Post("/devices/new", s.CreateDevice)
+	apiRouter.Post("/devices", s.CreateDevice)
 
 	apiRouter.Put("/devices/{id}", s.UpdateDevice)
 
@@ -60,7 +61,7 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
-// CreateDevice swagger:route POST /devices/new device devices.CreateDevice
+// CreateDevice swagger:route POST /devices device devices.CreateDevice
 //
 // Creates a new device.
 //
@@ -80,8 +81,11 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	//defer s.db.Close()
 
+	render.Status(r, http.StatusCreated)
 	json.NewEncoder(w).Encode(d)
+	// render.Render(w, r, d)
 }
 
 // DeviceById swagger:route GET /devices/{id}
@@ -150,6 +154,7 @@ func (s *Server) DevicesByBrand(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	json.NewEncoder(w).Encode(dd)
 }
 
@@ -225,7 +230,9 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	result, err := s.db.Delete(r.Context(), device)
 	if err != nil {
 		if errors.Is(err, devices.ErrDeviceInUse) {
+			log.Println(w, r, err.Error())
 			http.Error(w, err.Error(), http.StatusAccepted)
+			return
 		}
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
