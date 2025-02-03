@@ -2,9 +2,15 @@
 
 Devices API implements a CRUD operation for devices. It uses PostgreSQL as a persistent data, a REST API for interaction with the server.
 
-## Getting Started
+## Project Structure and dependencies
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+- The project uses the Respository design Pattern for the PostgreSQL usage.
+- Docker 
+- A Mock for the database
+- Chi Mux for the routing
+- Go-swagger for the API documentation
+
+
 
 ## MakeFile
 

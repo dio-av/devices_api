@@ -14,7 +14,7 @@ RUN go build -o cmd/api .
 RUN go build -o /bin/devices_api ./main.go
 
 #EXPOSE the port
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the executable
 CMD ["./api"]

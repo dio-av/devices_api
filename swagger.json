@@ -15,6 +15,26 @@
   "host": "localhost",
   "basePath": "/v1",
   "paths": {
+    "/devices/state/{state}": {
+      "put": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Get devices in the parameter state.",
+        "operationId": "DevicesByState",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/device"
+          },
+          "500": {
+            "$ref": "#/responses/internalServerError"
+          },
+          "default": {
+            "$ref": "#/responses/genericError"
+          }
+        }
+      }
+    },
     "/devices/{id}": {
       "put": {
         "tags": [
@@ -41,14 +61,54 @@
         "summary": "Deletes a device.",
         "operationId": "deleteDevice",
         "responses": {
-          "202": {
+          "204": {
             "description": ""
           },
           "500": {
-            "description": ""
+            "$ref": "#/responses/internalServerError"
           },
           "default": {
-            "$ref": "#/responses/rowsAffected"
+            "$ref": "#/responses/genericError"
+          }
+        }
+      }
+    }
+  },
+  "responses": {
+    "genericError": {
+      "description": "ErrResponse renderer type for handling all sorts of errors.\nA GenericError is the default error message that is generated.\nFor certain status codes there are more appropriate error structures.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "x-go-name": "Code"
+          },
+          "message": {
+            "type": "string",
+            "x-go-name": "Message"
+          }
+        }
+      }
+    },
+    "validationError": {
+      "description": "A ValidationError is an error that is generated for validation failures.\nIt has the same fields as a generic error but adds a Field property.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "x-go-name": "Code"
+          },
+          "field": {
+            "type": "string",
+            "x-go-name": "Field"
+          },
+          "message": {
+            "type": "string",
+            "x-go-name": "Message"
           }
         }
       }
