@@ -1,15 +1,22 @@
 package server
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"devices_api/internal/devices"
+	"devices_api/mock"
+
+	"go.uber.org/mock/gomock"
 )
+
+func initServer(s *Server) {
+
+}
 
 func TestHandler(t *testing.T) {
 	s := &Server{}
@@ -42,35 +49,37 @@ func TestCreateDevice(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(s.CreateDevice))
 	defer server.Close()
 
-	var respBody *bytes.Reader
-	resp, err := http.Post(server.URL+"/devices/new", "text/json", respBody)
-	if err != nil {
-		t.Fatalf("error making request to server. Err: %v", err)
-	}
-	defer resp.Body.Close()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	type device struct {
-		Name  string `json:"name"`
-		Brand string `json:"brand"`
-		State int    `json:"state"`
-	}
+	mockRepo := mock.NewMockRepository(ctrl)
 
-	d := device{Name: "abc123", Brand: "abc", State: 0}
-	dJson, err := json.Marshal(d)
-	if err != nil {
-		t.Errorf("POST /devices/new: %s", err)
-	}
+	mockRepo.EXPECT().
+		Create(context.Background(), devices.CreateDevice{}).
+		Return(&devices.Device{Id: 1,
+			Name:      "Device1",
+			Brand:     "Brand1",
+			State:     devices.InUse,
+			CreatedAt: time.Date(2009, time.November, 10, 23, 1, 2, 0, time.UTC)},
+			nil)
 
-	respBody = bytes.NewReader(dJson)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/devices/new", respBody)
-
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/devices", nil)
+	s.db = mockRepo
 	s.CreateDevice(w, r)
 
-	resp = w.Result()
+	resp := w.Result()
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	assert.Equal(t, body, dJson)
+	if err != nil {
+		t.Errorf("io.ReadAll() error = %s; want nil", err)
+	}
+
+	want := "{\"id\":1,\"name\":\"Device1\",\"brand\":\"Brand1\",\"state\":1,\"created_at\":\"2009-11-10T23:00:00Z\" }"
+
+	if string(body) != want {
+		t.Errorf("got %v ; want %v", string(body), want)
+	}
 
 }

@@ -83,10 +83,10 @@ func TestIsDeviceInUse(t *testing.T) {
 func TestCreationTimeFormatted(t *testing.T) {
 	d := NewDevice("name01", "brand01")
 
-	d.CreatedAt = time.Date(2009, time.November, 10, 23, 1, 2, 0, time.FixedZone("UTC+2", 2))
+	d.CreatedAt = time.Date(2009, time.November, 10, 23, 1, 2, 0, time.UTC)
 
 	formattedTime := d.CreationTimeFormatted()
 
-	expected := "2009-11-10T23:01:02+00:00"
+	expected := "2009-11-10T23:01:02Z"
 	assert.Equal(t, expected, formattedTime)
 }
