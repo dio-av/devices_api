@@ -37,9 +37,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	apiRouter.Get("devices/state/{state}", s.DevicesByState)
 
-	apiRouter.Get("/devices/all", s.AllDevices)
+	apiRouter.Get("/devices", s.AllDevices)
 
-	apiRouter.Delete("devices/delete/", s.DeleteDevice)
+	apiRouter.Delete("devices/remove/{id}", s.DeleteDevice)
 	// end of REST api routes
 
 	r.Get("/", s.HelloWorldHandler)
@@ -83,7 +83,7 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request) {
 	}
 	//defer s.db.Close()
 
-	render.Status(r, http.StatusCreated)
+	render.Status(r, http.StatusOK)
 	json.NewEncoder(w).Encode(d)
 	// render.Render(w, r, d)
 }
@@ -117,7 +117,7 @@ func (s *Server) DeviceById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(d)
 }
 
-// AllDevices swagger:route GET /devices/all
+// AllDevices swagger:route GET /devices
 //
 // Get all devices.
 //
