@@ -192,7 +192,13 @@ const updateDevice = `UPDATE devices SET
 	id = $4;`
 
 func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, error) {
-	if d.IsDeviceInUse() {
+	dv := devices.Device{}
+	row := s.db.QueryRowContext(ctx, `SELECT d_state FROM devices WHERE id = $1`, d.Id)
+
+	if err := row.Scan(&dv); err != nil {
+		return nil, err
+	}
+	if dv.IsDeviceInUse() {
 		return nil, errors.New("cannot update device while in use state")
 	}
 
@@ -207,9 +213,11 @@ func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, err
 const deleteDevice = `DELETE FROM devices where id = $1`
 
 func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, error) {
-	// TODO: Check via database if the device is in use
-	if d.IsDeviceInUse() {
-		return nil, errors.New("cannot delete device while in use state")
+	dv := devices.Device{}
+	row := s.db.QueryRowContext(ctx, `SELECT * FROM devices WHERE id = $1`, d.Id)
+
+	if err := row.Scan(&dv); err != nil {
+		return nil, err
 	}
 
 	result, err := s.db.Exec(deleteDevice, d.Id)
