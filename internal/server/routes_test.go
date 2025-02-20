@@ -46,7 +46,7 @@ func TestHandler(t *testing.T) {
 
 func TestCreateDevice(t *testing.T) {
 	s := &Server{}
-	server := httptest.NewServer(http.HandlerFunc(s.CreateDevice))
+	server := httptest.NewServer(http.HandlerFunc(s.createDevice))
 	defer server.Close()
 
 	ctrl := gomock.NewController(t)
@@ -66,7 +66,7 @@ func TestCreateDevice(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/devices", nil)
 	s.db = mockRepo
-	s.CreateDevice(w, r)
+	s.createDevice(w, r)
 
 	resp := w.Result()
 	defer resp.Body.Close()
