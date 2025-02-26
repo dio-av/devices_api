@@ -2,6 +2,7 @@ package server
 
 import (
 	"devices_api/internal/devices"
+	"devices_api/internal/server/rest"
 	"encoding/json"
 	"errors"
 	"log"
@@ -267,15 +268,11 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type success struct {
-		device     []devices.Device
-		statusCode int
+	successResponse := rest.DevicesResponse{
+		Devices:    dd,
+		StatusCode: http.StatusOK,
 	}
-	successResponse := success{
-		device:     dd,
-		statusCode: http.StatusOK,
-	}
-	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
+	if err := json.NewEncoder(w).Encode(&successResponse); err != nil {
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -294,6 +291,11 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	idUrl := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idUrl, 10, 64)
+	if err != nil {
+		log.Println(w, r, err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	d := devices.Device{Id: id}
 	_, err = s.db.Delete(r.Context(), d)
