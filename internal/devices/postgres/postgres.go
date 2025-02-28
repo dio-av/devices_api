@@ -193,6 +193,25 @@ const updateDevice = `UPDATE devices SET
 
 func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, error) {
 	dv := devices.Device{}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Rollback is safe to call even if the tx is already closed, so if
+	// the tx commits successfully, this is a no-op
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`SELECT d_state FROM devices WHERE id = $1`, d.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	row := s.db.QueryRowContext(ctx, `SELECT d_state FROM devices WHERE id = $1`, d.Id)
 
 	if err := row.Scan(&dv); err != nil {
