@@ -11,6 +11,10 @@ Devices API implements a CRUD operation for devices. It uses PostgreSQL as a per
 - Go-swagger for the API documentation
 
 
+## TODO Features 
+- API authentication and authorization
+- SQL mock
+- Complete test suit
 
 ## MakeFile
 
