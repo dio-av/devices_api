@@ -29,17 +29,17 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	apiRouter.Post("/devices", s.createDevice)
 
-	apiRouter.Patch("/devices/{id}", s.updateDevice)
+	apiRouter.Put("/devices/{deviceID:^[0-9]}", s.updateDevice)
 
-	apiRouter.Get("/devices/{id}", s.deviceById)
+	apiRouter.Get("/devices/{deviceID:^[0-9]}", s.deviceById)
 
-	apiRouter.Get("/devices/brand/{brand}", s.devicesByBrand)
+	apiRouter.Get("/devices/brands/{brand}", s.devicesByBrand)
 
-	apiRouter.Get("devices/state/{state}", s.devicesByState)
+	apiRouter.Get("devices/states/{state}", s.devicesByState)
 
 	apiRouter.Get("/devices", s.AllDevices)
 
-	apiRouter.Delete("devices/{id}", s.DeleteDevice)
+	apiRouter.Delete("devices/{deviceID}", s.DeleteDevice)
 	// end of REST api routes
 
 	r.Get("/", s.HelloWorldHandler)
@@ -51,7 +51,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]string)
-	resp["message"] = "Hello World"
+	resp["message"] = "Devices API"
 
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
@@ -72,14 +72,21 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 // Responses:
 //
 //		default: genericError
-//		200: device
-//	 	500: internalServerError
+//		201: statusCreated
+//	 	404: statusNotFound
 func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 
 	var device devices.CreateDevice
+	if r.Body == http.NoBody {
+		err := errors.New("empty body request")
+		log.Println(w, r, err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&device); err != nil {
 		log.Println(w, r, err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -91,12 +98,12 @@ func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type success struct {
-		device     *devices.Device
-		statusCode int
+		Device     *devices.Device
+		StatusCode int
 	}
 	successResponse := success{
-		device:     d,
-		statusCode: http.StatusOK,
+		Device:     d,
+		StatusCode: http.StatusCreated,
 	}
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
 		log.Println(w, r, err.Error())
@@ -113,9 +120,10 @@ func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 //
 //		default: genericError
 //		200: device
+//		404: statusNotFound
 //	 	500: internalServerError
 func (s *Server) deviceById(w http.ResponseWriter, r *http.Request) {
-	idUrl := chi.URLParam(r, "id")
+	idUrl := chi.URLParam(r, "deviceID")
 
 	id, err := strconv.ParseInt(idUrl, 10, 64)
 	if err != nil {
@@ -127,12 +135,13 @@ func (s *Server) deviceById(w http.ResponseWriter, r *http.Request) {
 	d, err := s.db.GetById(r.Context(), id)
 	if err != nil {
 		log.Println(w, r, err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(d); err != nil {
-
+		log.Println(w, r, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -144,6 +153,7 @@ func (s *Server) deviceById(w http.ResponseWriter, r *http.Request) {
 //
 //		default: genericError
 //		200: []device
+//		404: statusNotFound
 //	 	500: internalServerError
 func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 	dd, err := s.db.All(r.Context())
@@ -153,13 +163,19 @@ func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(dd) <= 0 {
+		log.Println(w, r, "no devices")
+		http.Error(w, "no devices found", http.StatusNotFound)
+		return
+	}
+
 	type success struct {
-		device     []devices.Device
-		statusCode int
+		Device     []devices.Device
+		StatusCode int
 	}
 	successResponse := success{
-		device:     dd,
-		statusCode: http.StatusOK,
+		Device:     dd,
+		StatusCode: http.StatusOK,
 	}
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
 		log.Println(w, r, err.Error())
@@ -168,7 +184,7 @@ func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// devicesByBrand swagger:route GET /devices/brand/{brand}
+// devicesByBrand swagger:route GET /devices/brands/{deviceID}
 //
 // Get Devices By Brand.
 //
@@ -188,12 +204,12 @@ func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type success struct {
-		device     []devices.Device
-		statusCode int
+		Device     []devices.Device
+		StatusCode int
 	}
 	successResponse := success{
-		device:     dd,
-		statusCode: http.StatusOK,
+		Device:     dd,
+		StatusCode: http.StatusOK,
 	}
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
 		log.Println(w, r, err.Error())
@@ -202,7 +218,7 @@ func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// UpdateDevcie swagger:route PUT /devices/{id} devices updateDevice
+// UpdateDevcie swagger:route PUT /devices/{deviceID} devices updateDevice
 //
 // Updates the parameters for a device.
 //
@@ -214,11 +230,21 @@ func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
 //	    500: internalServerError
 func (s *Server) updateDevice(w http.ResponseWriter, r *http.Request) {
 	var device devices.Device
+	// idUrl := chi.URLParam(r, "deviceID")
+
+	// id, err := strconv.ParseInt(idUrl, 10, 64)
+	// if err != nil {
+	// 	log.Println(w, r, err.Error())
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
 	if err := json.NewDecoder(r.Body).Decode(&device); err != nil {
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	d, err := s.db.GetById(r.Context(), device.Id)
 	if err != nil {
@@ -242,7 +268,7 @@ func (s *Server) updateDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// devicesByState swagger:route PUT /devices/state/{state} devices devicesByState
+// devicesByState swagger:route PUT /devices/states/{state} devices devicesByState
 //
 // Get devices in the parameter state.
 //
@@ -268,10 +294,10 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	successResponse := rest.DevicesResponse{
-		Devices:    dd,
-		StatusCode: http.StatusOK,
-	}
+	successResponse := rest.DevicesResponse{}
+	successResponse.Body.Devices = dd
+	successResponse.Body.StatusCode = http.StatusOK
+
 	if err := json.NewEncoder(w).Encode(&successResponse); err != nil {
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -286,10 +312,11 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 // Responses:
 //
 //		default: genericError
-//		204: statusNoContent
+//		202: statusAccepted
+//		404: statusNotFound
 //	    500: internalServerError
 func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {
-	idUrl := chi.URLParam(r, "id")
+	idUrl := chi.URLParam(r, "deviceID")
 	id, err := strconv.ParseInt(idUrl, 10, 64)
 	if err != nil {
 		log.Println(w, r, err.Error())
@@ -298,11 +325,19 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := devices.Device{Id: id}
-	_, err = s.db.Delete(r.Context(), d)
+	result, err := s.db.Delete(r.Context(), d)
 	if err != nil {
 		if errors.Is(err, devices.ErrDeviceInUse) {
 			log.Println(w, r, err.Error())
 			http.Error(w, err.Error(), http.StatusAccepted)
+			return
+		} else if n, err := result.RowsAffected(); n <= 0 {
+			if err != nil {
+				log.Println(w, r, err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			log.Println(w, r, "device not found")
+			http.Error(w, "device not found", http.StatusNotFound)
 			return
 		}
 		log.Println(w, r, err.Error())

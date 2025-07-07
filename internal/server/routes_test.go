@@ -52,6 +52,7 @@ func TestCreateDevice(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// it should be sql mock 
 	mockRepo := mock.NewMockRepository(ctrl)
 
 	mockRepo.EXPECT().
