@@ -311,7 +311,7 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		202: statusAccepted
+//		204: statusAccepted
 //		404: statusNotFound
 //	    500: internalServerError
 func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request) {

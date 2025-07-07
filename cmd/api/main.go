@@ -12,6 +12,11 @@ import (
 	"devices_api/internal/server"
 )
 
+// @title Devices Example API
+// @version 1.0
+
+// @BasePath /v2
+
 //go:generate swagger generate spec -o swagger.json
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
