@@ -71,7 +71,6 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		default: genericError
 //		201: statusCreated
 //	 	404: statusNotFound
 func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +117,6 @@ func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		default: genericError
 //		200: device
 //		404: statusNotFound
 //	 	500: internalServerError
@@ -151,7 +149,6 @@ func (s *Server) deviceById(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		default: genericError
 //		200: []device
 //		404: statusNotFound
 //	 	500: internalServerError
@@ -190,7 +187,6 @@ func (s *Server) AllDevices(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		default: genericError
 //		200: []device
 //	 	500: internalServerError
 func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +220,6 @@ func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//	default: genericError
 //	    200: device
 //		400: statusBadRequest
 //	    500: internalServerError
@@ -274,9 +269,10 @@ func (s *Server) updateDevice(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//	default: genericError
-//	    200: []device
-//	    500: internalServerError
+//	200: []device
+//	400: statusBadRequest
+//	404: statusNotFound
+//	500: internalServerError
 func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 	state := chi.URLParam(r, "state")
 
@@ -291,6 +287,10 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if len(dd) <= 0 {
+		log.Println(w, r, "devices not found")
+		http.Error(w, "devices not found", http.StatusNotFound)
 		return
 	}
 
@@ -311,7 +311,6 @@ func (s *Server) devicesByState(w http.ResponseWriter, r *http.Request) {
 //
 // Responses:
 //
-//		default: genericError
 //		202: statusAccepted
 //		404: statusNotFound
 //	    500: internalServerError

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const layoutISO8601 = "2006-01-02 03:04:05Z07"
+// const layoutISO8601 = "2006-01-02 03:04:05Z07"
 
 func TestChangeDeviceState(t *testing.T) {
 	d := NewDevice("name01", "brand01")
