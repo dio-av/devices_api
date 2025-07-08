@@ -31,7 +31,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// REST api routes begin
 	// TODO: REST api router should be moved to the rest package
 	apiRouter := chi.NewRouter()
-	r.Mount("/api/v1", apiRouter)
+	r.Mount("/api/v1", r)
 
 	apiRouter.Post("/devices", s.createDevice)
 
