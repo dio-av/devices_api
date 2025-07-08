@@ -7,10 +7,12 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/sessions"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -21,6 +23,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("http://localhost:1323/swagger.json"),
 	))
+
+	r.Get("/auth/:provider", signInWithProvider)
+	r.Get("/auth/:provider/callback", callbackHandler)
+	r.Get("/success", Success)
 
 	// REST api routes begin
 	// TODO: REST api router should be moved to the rest package
@@ -225,6 +231,7 @@ func (s *Server) devicesByBrand(w http.ResponseWriter, r *http.Request) {
 //	    500: internalServerError
 func (s *Server) updateDevice(w http.ResponseWriter, r *http.Request) {
 	var device devices.Device
+
 	// idUrl := chi.URLParam(r, "deviceID")
 
 	// id, err := strconv.ParseInt(idUrl, 10, 64)
@@ -355,6 +362,56 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write(jsonResp)
 	if err != nil {
 		log.Println(w, r, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func signInWithProvider(w http.ResponseWriter, r *http.Request) {
+	// provider := chi.URLParam(r, "auth")
+	token := r.Header.Get("Authorization")
+	if len(token) == 0 {
+		w.Write([]byte("auth token not provided"))
+		return
+	}
+	// q := c.Request.URL.Query()
+	// q.Add("provider", provider)
+	// c.Request.URL.RawQuery = q.Encode()
+
+	// gothic.BeginAuthHandler(c.Writer, c.Request)
+}
+
+func callbackHandler(w http.ResponseWriter, r *http.Request) {
+	// provider := c.Param("provider")
+	// q := c.Request.URL.Query()
+	// q.Add("provider", provider)
+	// c.Request.URL.RawQuery = q.Encode()
+
+	// _, err := gothic.CompleteUserAuth(c.Writer, c.Request)
+	// if err != nil {
+	// 	c.AbortWithError(http.StatusInternalServerError, err)
+	// 	return
+	// }
+
+	// c.Redirect(http.StatusTemporaryRedirect, "/success")
+}
+
+func Success(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("200 "))
+}
+
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+
+func StoreSession(w http.ResponseWriter, r *http.Request) {
+	// Get a session. We're ignoring the error resulted from decoding an
+	// existing session: Get() always returns a session, even if empty.
+	session, _ := store.Get(r, "session-name")
+	// Set some session values.
+	session.Values["foo"] = "bar"
+	session.Values[42] = 43
+	// Save it before we write to the response/return from the handler.
+	err := session.Save(r, w)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
