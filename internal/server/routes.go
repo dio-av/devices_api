@@ -78,14 +78,14 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 // Responses:
 //
 //		201: statusCreated
-//	 	404: statusNotFound
+//	 	400: statusBadRequest
 func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
-
 	var device devices.CreateDevice
+
 	if r.Body == http.NoBody {
 		err := errors.New("empty body request")
 		log.Println(w, r, err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
