@@ -31,9 +31,11 @@ type Repository interface {
 
 // Writer represents the behaviour for writing data to repository.
 type Writer interface {
-	Create(ctx context.Context, cd CreateDevice) (*Device, error)
+	Create(ctx context.Context, cd CreateDevice) (sql.Result, error)
 	Update(ctx context.Context, d Device) (sql.Result, error)
 	Delete(ctx context.Context, d Device) (sql.Result, error)
+	BeginTransaction(ctx context.Context) (*sql.Tx, error)
+	CommitTransaction(ctx context.Context, tx *sql.Tx) error
 }
 
 // Reader represents the behaviour for reading data from repository.

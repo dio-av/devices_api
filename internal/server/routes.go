@@ -95,7 +95,7 @@ func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d, err := s.db.Create(r.Context(), device)
+	_, err := s.db.Create(r.Context(), device)
 	if err != nil {
 		log.Println(w, r, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -103,11 +103,11 @@ func (s *Server) createDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type success struct {
-		Device     *devices.Device
+		Device     devices.CreateDevice
 		StatusCode int
 	}
 	successResponse := success{
-		Device:     d,
+		Device:     device,
 		StatusCode: http.StatusCreated,
 	}
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {

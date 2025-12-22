@@ -39,11 +39,10 @@ func NewRepository() devices.Repository {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dbInstance = &service{
+
+	return &service{
 		db: db,
 	}
-
-	return dbInstance
 }
 
 const createDevice = `-- name: CreateDevice :one
@@ -57,22 +56,23 @@ INSERT INTO devices (
 ) RETURNING d_name, d_brand, d_state, created_at
 `
 
-func (s *service) Create(ctx context.Context, cd devices.CreateDevice) (*devices.Device, error) {
-	row := s.db.QueryRowContext(ctx, createDevice, cd.Name, cd.Brand, cd.State)
-
-	var d devices.Device
-	err := row.Scan(
-		&d.Id,
-		&d.Name,
-		&d.Brand,
-		&d.State,
-		&d.CreatedAt,
-	)
+func (s *service) Create(ctx context.Context, cd devices.CreateDevice) (sql.Result, error) {
+	tx, err := s.BeginTransaction(ctx)
 	if err != nil {
-		return &devices.Device{}, err
+		return nil, err
 	}
 
-	return &d, nil
+	result, err := tx.ExecContext(ctx, createDevice, cd.Name, cd.Brand, cd.State)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.CommitTransaction(ctx, tx); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+
 }
 
 const getDeviceById = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
@@ -133,7 +133,7 @@ WHERE d_state = $1`
 func (s *service) GetByState(ctx context.Context, state devices.DeviceState) ([]devices.Device, error) {
 	var dd []devices.Device
 
-	rows, err := s.db.QueryContext(ctx, getDevicesByBrand, int(state))
+	rows, err := s.db.QueryContext(ctx, getDevicesByState, int(state))
 	if err != nil {
 		return []devices.Device{}, err
 	}
@@ -142,13 +142,11 @@ func (s *service) GetByState(ctx context.Context, state devices.DeviceState) ([]
 	for rows.Next() {
 		var d devices.Device
 
-		err = rows.Scan(&d)
-		if err != nil {
+		if err := rows.Scan(&d); err != nil {
 			return []devices.Device{}, err
 		}
 
-		err = rows.Err()
-		if err != nil {
+		if err := rows.Err(); err != nil {
 			return []devices.Device{}, err
 		}
 		dd = append(dd, d)
@@ -202,17 +200,11 @@ func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, err
 	// the tx commits successfully, this is a no-op
 	defer tx.Rollback()
 
-	_, err = tx.Exec(`SELECT d_state FROM devices WHERE id = $1`, d.Id)
-	if err != nil {
+	row := tx.QueryRowContext(ctx, `SELECT d_state FROM devices WHERE id = $1`, d.Id)
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	row := s.db.QueryRowContext(ctx, `SELECT d_state FROM devices WHERE id = $1`, d.Id)
 
 	if err := row.Scan(&dv); err != nil {
 		return nil, err
@@ -221,7 +213,7 @@ func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, err
 		return nil, errors.New("cannot update device while in use state")
 	}
 
-	result, err := s.db.Exec(updateDevice, d.Name, d.Brand, d.State)
+	result, err := tx.ExecContext(ctx, updateDevice, d.Name, d.Brand, d.State)
 	if err != nil {
 		return nil, err
 	}
@@ -239,12 +231,34 @@ func (s *service) Delete(ctx context.Context, d devices.Device) (sql.Result, err
 		return nil, err
 	}
 
+	if dv.State == devices.InUse {
+		return nil, devices.ErrDeviceInUse
+	}
 	result, err := s.db.Exec(deleteDevice, d.Id)
 	if err != nil {
 		return nil, devices.ErrDeleteFailed
 	}
 
 	return result, nil
+}
+
+func (s *service) BeginTransaction(ctx context.Context) (*sql.Tx, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error begin transaction %w", err)
+	}
+
+	return tx, nil
+}
+
+func (s *service) CommitTransaction(ctx context.Context, tx *sql.Tx) error {
+	if err := tx.Commit(); err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return fmt.Errorf("commit transaction error %w", rollbackErr)
+		}
+	}
+
+	return nil
 }
 
 // Health checks the health of the database connection by pinging the database.

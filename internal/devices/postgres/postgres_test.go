@@ -152,13 +152,12 @@ func TestClose(t *testing.T) {
 func (suite *DevicesRepoTestSuite) TestCreateDevice() {
 	t := suite.T()
 
-	device, err := suite.repo.Create(suite.ctx, devices.CreateDevice{
+	_, err := suite.repo.Create(suite.ctx, devices.CreateDevice{
 		Name:  "Device1",
 		Brand: "Brand1",
 		State: devices.Inactive,
 	})
 	assert.NoError(t, err)
-	assert.NotNil(t, device.Id)
 }
 
 func TestCreate(t *testing.T) {
