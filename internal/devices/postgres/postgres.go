@@ -47,12 +47,12 @@ func NewRepository() devices.Repository {
 
 const createDevice = `-- name: CreateDevice :one
 INSERT INTO devices (
-  d_name,
-  d_brand,
-  d_state,
-  created_at
+	d_name,
+	d_brand,
+	d_state,
+	created_at
 ) VALUES (
-  $1, $2, $3, NOW()
+	$1, $2, $3, NOW()
 ) RETURNING d_name, d_brand, d_state, created_at
 `
 
@@ -75,8 +75,9 @@ func (s *service) Create(ctx context.Context, cd devices.CreateDevice) (sql.Resu
 
 }
 
-const getDeviceById = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
-WHERE id = $1 LIMIT 1`
+const getDeviceById = `SELECT id, d_name, d_brand, d_state, created_at
+	FROM devices
+	WHERE id = $1 LIMIT 1`
 
 func (s *service) GetById(ctx context.Context, id int64) (*devices.Device, error) {
 	var d devices.Device
@@ -97,8 +98,9 @@ func (s *service) GetById(ctx context.Context, id int64) (*devices.Device, error
 	return &d, nil
 }
 
-const getDevicesByBrand = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
-WHERE d_brand = $1`
+const getDevicesByBrand = `SELECT id, d_name, d_brand, d_state, created_at
+	FROM devices
+	WHERE d_brand = $1`
 
 func (s *service) GetByBrand(ctx context.Context, brand string) ([]devices.Device, error) {
 	var dd []devices.Device
@@ -127,8 +129,9 @@ func (s *service) GetByBrand(ctx context.Context, brand string) ([]devices.Devic
 	return dd, nil
 }
 
-const getDevicesByState = `SELECT id, d_name, d_brand, d_state, created_at FROM devices
-WHERE d_state = $1`
+const getDevicesByState = `SELECT id, d_name, d_brand, d_state, created_at
+	FROM devices
+	WHERE d_state = $1`
 
 func (s *service) GetByState(ctx context.Context, state devices.DeviceState) ([]devices.Device, error) {
 	var dd []devices.Device
@@ -184,10 +187,9 @@ func (s *service) All(ctx context.Context) ([]devices.Device, error) {
 	return dd, nil
 }
 
-const updateDevice = `UPDATE devices SET
-	d_name = $1, d_brand = $2, d_state = $3
-	WHERE
-	id = $4;`
+const updateDevice = `UPDATE devices
+	SET d_name = $1, d_brand = $2, d_state = $3
+	WHERE id = $4;`
 
 func (s *service) Update(ctx context.Context, d devices.Device) (sql.Result, error) {
 	dv := devices.Device{}
