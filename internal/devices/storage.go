@@ -11,7 +11,7 @@ var (
 	ErrNotExist     = errors.New("row does not exist")
 	ErrUpdateFailed = errors.New("update failed")
 	ErrDeleteFailed = errors.New("delete failed")
-	ErrDeviceInUse  = errors.New("cannot delete device while in use state")
+	ErrDeviceInUse  = errors.New("cannot delete device while in use")
 )
 
 // CreateDevice represents the model to create a new device.
